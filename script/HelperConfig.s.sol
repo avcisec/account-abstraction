@@ -18,6 +18,7 @@ contract HelperConfig is Script {
     uint256 constant LOCAL_CHAIN_ID = 31337;
     address constant BURNER_WALLET = 0x0Bb633476099c96Dae4f1D66bDBDc911Dbe20C50;
     address constant SEPOLIA_ENTRY_POINT_ADDRESS = 0x5FF137D4b0FDCD49DcA30c7CF57E578a026d2789;
+    address constant FOUNDRY_DEFAULT_SENDER = 0x1804c8AB1F12E6bbf3894d4083f33e07309d1f38;
     NetworkConfig public localNetworkConfig;
     mapping(uint256 chainId => NetworkConfig) public networkConfigs;
 
@@ -52,6 +53,7 @@ contract HelperConfig is Script {
             return localNetworkConfig;
         }
 
+        return NetworkConfig({entryPoint: address(0), account: FOUNDRY_DEFAULT_SENDER});
         // deploy entryPoint mock
     }
 }
