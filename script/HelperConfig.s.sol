@@ -1,8 +1,10 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.24;
 
-import {Script} from "forge-std/Script.sol";
+import {Script, console2} from "forge-std/Script.sol";
 import {MinimalAccount} from "../src/ethereum/MinimalAccount.sol";
+import {EntryPoint} from "@account-abstraction/contracts/core/EntryPoint.sol";
+
 // helperConfigin kutuphanesini yapip FOundry Devops reposuna katkida bulun
 
 contract HelperConfig is Script {
@@ -18,7 +20,9 @@ contract HelperConfig is Script {
     uint256 constant LOCAL_CHAIN_ID = 31337;
     address constant BURNER_WALLET = 0x0Bb633476099c96Dae4f1D66bDBDc911Dbe20C50;
     address constant SEPOLIA_ENTRY_POINT_ADDRESS = 0x5FF137D4b0FDCD49DcA30c7CF57E578a026d2789;
-    address constant FOUNDRY_DEFAULT_SENDER = 0x1804c8AB1F12E6bbf3894d4083f33e07309d1f38;
+    // address constant FOUNDRY_DEFAULT_SENDER = 0x1804c8AB1F12E6bbf3894d4083f33e07309d1f38;
+    address constant ANVIL_DEFAULT_ACCOUNT = 0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266;
+
     NetworkConfig public localNetworkConfig;
     mapping(uint256 chainId => NetworkConfig) public networkConfigs;
 
@@ -52,8 +56,13 @@ contract HelperConfig is Script {
         if (localNetworkConfig.account != address(0)) {
             return localNetworkConfig;
         }
+        console2.log("Deploying mocks...");
+        vm.startBroadcast(ANVIL_DEFAULT_ACCOUNT);
+        EntryPoint entryPoint = new EntryPoint();
+        vm.stopBroadcast();
 
-        return NetworkConfig({entryPoint: address(0), account: FOUNDRY_DEFAULT_SENDER});
-        // deploy entryPoint mock
+        localNetworkConfig = NetworkConfig({entryPoint: address(entryPoint), account: ANVIL_DEFAULT_ACCOUNT});
+
+        return localNetworkConfig;
     }
 }
