@@ -70,8 +70,9 @@ contract MinimalAccountTest is Test {
 
         bytes memory executeCallData =
             abi.encodeWithSelector(MinimalAccount.execute.selector, dest, value, functionData);
-        PackedUserOperation memory packedUserOp =
-            sendPackedUserOp.generateSignedUserOperation(executeCallData, helperConfig.getConfig(), address(minimalAccount));
+        PackedUserOperation memory packedUserOp = sendPackedUserOp.generateSignedUserOperation(
+            executeCallData, helperConfig.getConfig(), address(minimalAccount)
+        );
 
         bytes32 userOperationHash = IEntryPoint(helperConfig.getConfig().entryPoint).getUserOpHash(packedUserOp);
         // Act
@@ -93,21 +94,19 @@ contract MinimalAccountTest is Test {
 
         bytes memory executeCallData =
             abi.encodeWithSelector(MinimalAccount.execute.selector, dest, value, functionData);
-        PackedUserOperation memory packedUserOp =
-            sendPackedUserOp.generateSignedUserOperation(executeCallData, helperConfig.getConfig(), address(minimalAccount));
+        PackedUserOperation memory packedUserOp = sendPackedUserOp.generateSignedUserOperation(
+            executeCallData, helperConfig.getConfig(), address(minimalAccount)
+        );
         bytes32 userOperationHash = IEntryPoint(helperConfig.getConfig().entryPoint).getUserOpHash(packedUserOp);
         // Act
         vm.prank(helperConfig.getConfig().entryPoint);
-       uint256 validationData = minimalAccount.validateUserOp(packedUserOp, userOperationHash, missingAccountFunds);
+        uint256 validationData = minimalAccount.validateUserOp(packedUserOp, userOperationHash, missingAccountFunds);
         uint256 expectedValidationData = 0;
         console.log("validationData", validationData);
-        
 
         // Assert
         assertEq(validationData, expectedValidationData);
-
     }
-
 
     function testEntryPointCanExecuteCommands() public {
         assertEq(usdc.balanceOf(address(minimalAccount)), 0);
@@ -117,22 +116,20 @@ contract MinimalAccountTest is Test {
 
         bytes memory executeCallData =
             abi.encodeWithSelector(MinimalAccount.execute.selector, dest, value, functionData);
-        PackedUserOperation memory packedUserOp =
-            sendPackedUserOp.generateSignedUserOperation(executeCallData, helperConfig.getConfig(), address(minimalAccount));
+        PackedUserOperation memory packedUserOp = sendPackedUserOp.generateSignedUserOperation(
+            executeCallData, helperConfig.getConfig(), address(minimalAccount)
+        );
 
         // bytes32 userOperationHash = IEntryPoint(helperConfig.getConfig().entryPoint).getUserOpHash(packedUserOp);
         PackedUserOperation[] memory ops = new PackedUserOperation[](1);
         ops[0] = packedUserOp;
 
-
         vm.deal(address(minimalAccount), 2e18 ether);
-        
+
         vm.prank(randomUser);
         IEntryPoint(helperConfig.getConfig().entryPoint).handleOps(ops, payable(randomUser));
         uint256 minimalAccountBalance = usdc.balanceOf(address(minimalAccount));
 
         assertEq(minimalAccountBalance, AMOUNT);
-
-   
     }
 }
