@@ -63,7 +63,7 @@ contract ZkMinimalAccount is IAccount, Ownable {
         _;
     }
 
-        modifier onlyBootloaderOrOwner() {
+    modifier onlyBootloaderOrOwner() {
         if (msg.sender != BOOTLOADER_FORMAL_ADDRESS && msg.sender != owner()) {
             revert ZkMinimalAccount__NotFromBootloaderOrOwner();
         }
@@ -76,9 +76,10 @@ contract ZkMinimalAccount is IAccount, Ownable {
                            EXTERNAL FUNCTIONS
     //////////////////////////////////////////////////////////////*/
 
+    receive() external payable {}
+
     // msg.sender is the bootloader system contract (this is like entryPoint contract on EVM)
     /***
-     *
      *
      * @notice 1. We must increase the nonce.
      * @notice 2. Also we must validate the transaction (check the owner signed the transaction)
@@ -100,37 +101,24 @@ contract ZkMinimalAccount is IAccount, Ownable {
         external
         payable
     {
-        address to = address(uint160(_transaction.to)); // to uint256 oldugu icin convert ettik
-        uint128 value = Utils.safeCastToU128(_transaction.value); // system kontrati value degerini uint128 olarak aliyor oyuzden safeCast ediyoruz
-        bytes memory data = _transaction.data;
-        if (to == address(DEPLOYER_SYSTEM_CONTRACT)) {
-            uint32 gas = Utils.safeCastToU32(gasleft());
-            SystemContractsCaller.systemCallWithPropagatedRevert(gas, to, value, data);
-        } else {
-            bool success;
-            assembly {
-                success := call(gas(), to, value, add(data, 0x20), mload(data), 0, 0)
-            }
-            if (!success) {
-                revert ZkMinimalAccount__ExecutionFailed();
-            }
-        }
+        _executeTransaction(_transaction);
     }
 
     // There is no point in providing possible signed hash in the `executeTransactionFromOutside` method,
     // since it typically should not be trusted.
-    function executeTransactionFromOutside(Transaction memory _transaction) external payable {}
+    function executeTransactionFromOutside(Transaction memory _transaction) external payable {
+        _validateTransaction(_transaction);
+        _executeTransaction(_transaction);
+    }
 
-    function payForTransaction(bytes32 /*_txHash*/, bytes32 /*_suggestedSignedHash*/, Transaction memory _transaction)
+    function payForTransaction(bytes32, /*_txHash*/ bytes32, /*_suggestedSignedHash*/ Transaction memory _transaction)
         external
         payable
     {
-
-       bool success = _transaction.payToTheBootloader();
-        if(!success) {
+        bool success = _transaction.payToTheBootloader();
+        if (!success) {
             revert ZkMinimalAccount__FailedToPay();
         }
-
     }
 
     function prepareForPaymaster(bytes32 _txHash, bytes32 _possibleSignedHash, Transaction memory _transaction)
@@ -143,8 +131,7 @@ contract ZkMinimalAccount is IAccount, Ownable {
     //////////////////////////////////////////////////////////////*/
 
     function _validateTransaction(Transaction memory _transaction) internal returns (bytes4 magic) {
-    
-                // call nonceHolder system contract (to call a system contract, first add --system-mode = true to foundry toml file)
+        // call nonceHolder system contract (to call a system contract, first add --system-mode = true to foundry toml file)
         // call(x,y,z) -> system contract call (anything you pass, will be converted to system call)
         // this is called zksync simulations
         // increment the nonce with incrementMinNonceIfEquals function
@@ -172,7 +159,23 @@ contract ZkMinimalAccount is IAccount, Ownable {
         }
         // return the "magic" number
         return magic;
-        
+    }
 
+    function _executeTransaction(Transaction memory _transaction) internal {
+        address to = address(uint160(_transaction.to)); // to uint256 oldugu icin convert ettik
+        uint128 value = Utils.safeCastToU128(_transaction.value); // system kontrati value degerini uint128 olarak aliyor oyuzden safeCast ediyoruz
+        bytes memory data = _transaction.data;
+        if (to == address(DEPLOYER_SYSTEM_CONTRACT)) {
+            uint32 gas = Utils.safeCastToU32(gasleft());
+            SystemContractsCaller.systemCallWithPropagatedRevert(gas, to, value, data);
+        } else {
+            bool success;
+            assembly {
+                success := call(gas(), to, value, add(data, 0x20), mload(data), 0, 0)
+            }
+            if (!success) {
+                revert ZkMinimalAccount__ExecutionFailed();
+            }
+        }
     }
 }
