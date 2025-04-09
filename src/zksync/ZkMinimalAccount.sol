@@ -81,6 +81,7 @@ contract ZkMinimalAccount is IAccount, Ownable {
     // msg.sender is the bootloader system contract (this is like entryPoint contract on EVM)
     /***
      *
+     *
      * @notice 1. We must increase the nonce.
      * @notice 2. Also we must validate the transaction (check the owner signed the transaction)
      * @notice 3. also check to see if we have enough money to pay the transaction.
